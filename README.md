@@ -154,6 +154,16 @@ Written from a production Godot 4.7 project — a catalogue of commercial titles
 shipped to the browser, where build size is a hard constraint rather than a
 preference.
 
+### If your build has the same problem
+
+I take this on as a fixed-scope audit: you send the build, I send back the
+measurements, what is actually costing you, and the ordered list of what to cut.
+No access to your source needed.
+
+**zednaked@gmail.com**
+
+---
+
 Other things I've made: [godot-canvas-shaders](https://github.com/zednaked/godot-canvas-shaders)
 · [ZGT, a terminal inside the Godot editor](https://github.com/zednaked/zgt-bin)
 · [mcpgodot](https://github.com/zednaked/mcpgodot)
