@@ -156,9 +156,11 @@ preference.
 
 ### If your build has the same problem
 
-I take this on as a fixed-scope audit: you send the build, I send back the
-measurements, what is actually costing you, and the ordered list of what to cut.
-No access to your source needed.
+I take this on as a fixed-scope audit: you send the exported build, I send back
+the measurements, what is actually costing you, and the ordered list of what to
+cut, largest saving first. No access to your source needed.
+
+**USD 400 · 3 business days · no repo access**
 
 **zednaked@gmail.com**
 
