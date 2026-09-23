@@ -1,5 +1,8 @@
 # Cutting a Godot web build from 119 MB to 37 MB
 
+*Second edition: a second project, the export settings nobody chooses, and where
+the floor actually is.*
+
 A teammate couldn't open our game on his phone. The loading bar stopped at 90%
 and the screen went black. The same build booted fine on desktop, on all three
 hosts. So it wasn't the environment and it wasn't boot code. It was weight.
@@ -107,7 +110,48 @@ tell you this. It's the one thing that has to be checked on screen.
 Same art, same scenes, no assets deleted. The phone that couldn't load the game
 loaded it.
 
-## 6. A size audit finds dead things
+## 6. The same method on a second project
+
+A year later, a different title in the same catalogue. Godot 4.7, Spine-based,
+272 textures, and every one of them again at `compress/mode=0`. The default had
+not changed and neither had the outcome.
+
+```
+index.pck        raw           brotli -q5
+before      60,749,624       57,088,451
+after       15,712,600       12,155,037
+```
+
+**74% less.** Switching the import mode alone took the pack from 60.7 MB to
+16.3 MB, and `.godot/imported/` from 73 MB to 17 MB. Two projects, two years
+apart, same default, same size of mistake.
+
+That is the part worth taking away: this is not a story about one badly set up
+project. It is the shipping default, and it costs the same every time.
+
+## 7. Your export ships things you never chose
+
+The export preset in both projects was set to `all_resources`, which means
+everything under the project directory goes into the pack whether a scene
+references it or not. On the second project that was:
+
+- `assets/_wip`, `assets/mockups`, `assets/thumbnails` — **3.4 MB** of design
+  reference that belongs in the repository and not in the build
+- three font families from a shared addon that no resource in this game
+  referenced, because it uses its own copies
+- `test_*.tscn` and `test_*.gd` — a test scene is not a game
+
+All of it went into `exclude_filter`, none of it was deleted from the repo.
+
+I have since watched someone else find the same shape independently: 71 stray
+test screenshots, stored at 3x, swept into their pack by the same setting. It
+cost them 10 MB.
+
+**Treat it as a filter problem, not a cleanup problem.** Deleting the files
+fixes today. An exclude rule fixes the next person who drops a screenshot into
+the project folder.
+
+## 8. A size audit finds dead things
 
 Three textures made Godot's WebP re-encoder fail outright: `Failed decoding WebP
 image`. I put them back to lossless, and they *still* produced no `.ctex`. They
@@ -117,7 +161,7 @@ referenced them. They were orphans that had been riding along in the repo.
 You tend to find a few of these whenever you sort a project by file size. It's a
 good enough reason to do it once a year even when nothing is on fire.
 
-## 7. The other levers, in order of payoff
+## 9. The other levers, in order of payoff
 
 Once textures were handled, the remaining budget was mostly fixed cost:
 
@@ -127,16 +171,66 @@ starts before the sound is there and wires it up when it lands. This moves the
 whole audio budget out of time-to-first-frame, which is what people actually
 experience as "slow", and it's usually the second biggest block after textures.
 
-**`icudt_godot.dat` (~4.5 MB) is the price of internationalisation.** It ships
-when you use Godot's i18n machinery. Worth knowing it's there and that it is not
-a leak, but if you ship one locale, check whether you need it at all.
+**Spine atlases are usually PNG, and they do not have to be.** On the second
+project the seven atlas pages were 8.46 MB of PNG. Converted to lossless WebP
+they became 4.23 MB, exactly half, and the runtime loaded them without a change
+to any scene. Lossless on purpose at the source: the only lossy step in the
+chain should be Godot's import, so that you keep one knob instead of two.
+
+**`icudt_godot.dat` is the price of internationalisation, and I measured it.**
+Setting `locale/include_text_server_data=false` took the second project's pack
+from 16,321,096 to 11,523,504 bytes. That is 4.8 MB, almost a third of what was
+left after everything above.
+
+I did not ship it. Without that dataset, Arabic bidirectional text and the line
+breaking rules for Devanagari scripts degrade, and this is not something a
+screenshot diff catches: the build gets smaller and one of your locales quietly
+gets worse. Another title in the same catalogue runs without it in the same 12
+languages, which proves it boots, not that its Arabic renders correctly.
+
+**If you ship one locale, drop it and take the 4.8 MB.** If you ship Arabic,
+Hindi or Nepali, this is the one saving on the list you should walk away from
+until someone has looked at all three on a real screen. I wrote up what actually
+breaks in [godot-i18n-that-holds-up](https://github.com/zednaked/godot-i18n-that-holds-up).
 
 **Fonts add up fast when you support many scripts.** Four and a half megabytes,
 in our case, across the fallbacks needed for non-Latin scripts. Subsetting is
 the lever, and it is fiddly enough that I'd only reach for it after the two
 above.
 
-## The method, in four steps
+## 10. Where the floor is, and when to stop
+
+Everything above is your pack. The engine ships alongside it and does not move
+no matter what you do to your art. Measured on the second project:
+
+```
+                      on disk    brotli -q5
+web.wasm               1.4 MB        0.5 MB
+web.side.wasm         42.0 MB        8.1 MB
+spine runtime          2.3 MB        0.3 MB
+                                  ---------
+engine floor                          8.9 MB
+```
+
+Two things follow from that table.
+
+**The 42 MB is not what anyone downloads.** It is the figure people quote when
+they panic about Godot on the web. Served with brotli, which any static host
+does, it is 8.1 MB. If your host is not compressing the `.wasm` and the `.pck`,
+that is one line of configuration and it is worth more than a week of asset
+work.
+
+**Below roughly 9 MB you are optimising the engine, not your game.** With the
+pack at 12 MB brotli and the engine at 8.9, this build sits at about 21 MB and
+further texture work has almost nothing left to give. Someone running a
+completely unrelated Godot 4 game measured 9.6 MB for their engine and landed in
+the same place from the other direction.
+
+Knowing where the floor is tells you when to stop, which is the part most size
+advice never gets to. Past that point the lever is no longer bytes, it is what
+the player looks at while those bytes arrive.
+
+## The method, in five steps
 
 1. **Unpack and sort by size.** Never optimise from intuition; 91% of our budget
    was in one line and none of the obvious suspects mattered.
@@ -147,12 +241,15 @@ above.
 4. **Quantify the loss where it's visible.** Diff against lossless, mask by
    alpha, and look at where the differing pixels actually are before rejecting a
    6x saving over a screenshot that looked bad.
+5. **Check what your export ships that you never chose**, and fix it with a
+   filter rather than a delete. Then find the engine floor and stop there.
 
 ---
 
-Written from a production Godot 4.7 project, a catalogue of commercial titles
-shipped to the browser, where build size is a hard constraint rather than a
-preference.
+Written from two production Godot 4.7 projects in a catalogue of commercial
+titles shipped to the browser, where build size is a hard constraint rather than
+a preference. The numbers are measured, not estimated, and every one of them
+came out of a build that shipped.
 
 ### If your build has the same problem
 
