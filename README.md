@@ -10,6 +10,16 @@ hosts. So it wasn't the environment and it wasn't boot code. It was weight.
 This is what I found, what I measured, and the one result that contradicted the
 obvious guess.
 
+| project | what was measured | before | after | cut |
+|---|---|---|---|---|
+| first | `.godot/imported/` | 120 MB | 37 MB | 69% |
+| second | `index.pck`, raw | 60.7 MB | 15.7 MB | 74% |
+| third | `index.pck`, brotli (what the player downloads) | 18.9 MB | 9.9 MB | 48% |
+
+Three projects measured three different ways, so there is no honest average. The
+honest summary is the floor: **every one came down by 48% or more**, with no
+assets deleted.
+
 ## 1. Open the pack before you optimise anything
 
 The temptation is to start deleting things. Don't. Unpack the `.pck` you're
