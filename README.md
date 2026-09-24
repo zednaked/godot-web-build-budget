@@ -143,9 +143,15 @@ references it or not. On the second project that was:
 
 All of it went into `exclude_filter`, none of it was deleted from the repo.
 
-I have since watched someone else find the same shape independently: 71 stray
-test screenshots, stored at 3x, swept into their pack by the same setting. It
-cost them 10 MB.
+I have since watched someone else find the same shape independently. Ziwei Yu,
+measuring [Island Evolution](https://islandevolution.com), found 71 stray test
+screenshots, stored at 3x, swept into the pack by the same setting. It cost
+10 MB: the pack went from 22 MB to 12 MB.
+
+He then added the part that makes the fix hold: the deploy script fails if the
+pack goes over 13 MB. An exclude filter only catches names it already knows; a
+size gate catches the next thing nobody thought to name, at deploy instead of in
+front of players.
 
 **Treat it as a filter problem, not a cleanup problem.** Deleting the files
 fixes today. An exclude rule fixes the next person who drops a screenshot into
@@ -222,9 +228,9 @@ work.
 
 **Below roughly 9 MB you are optimising the engine, not your game.** With the
 pack at 12 MB brotli and the engine at 8.9, this build sits at about 21 MB and
-further texture work has almost nothing left to give. Someone running a
-completely unrelated Godot 4 game measured 9.6 MB for their engine and landed in
-the same place from the other direction.
+further texture work has almost nothing left to give. Ziwei Yu's
+Island Evolution, a completely unrelated Godot 4 game, measured 9.6 MB for its
+engine and landed in the same place from the other direction.
 
 Knowing where the floor is tells you when to stop, which is the part most size
 advice never gets to. Past that point the lever is no longer bytes, it is what
