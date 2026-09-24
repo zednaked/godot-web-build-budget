@@ -1,7 +1,7 @@
 # Cutting a Godot web build from 119 MB to 37 MB
 
-*Second edition: a second project, the export settings nobody chooses, and where
-the floor actually is.*
+*Third edition: three projects, the export settings nobody chooses, a 7 MB file
+nothing reads, and where the floor actually is.*
 
 A teammate couldn't open our game on his phone. The loading bar stopped at 90%
 and the screen went black. The same build booted fine on desktop, on all three
@@ -110,7 +110,7 @@ tell you this. It's the one thing that has to be checked on screen.
 Same art, same scenes, no assets deleted. The phone that couldn't load the game
 loaded it.
 
-## 6. The same method on a second project
+## 6. The same method on two more projects
 
 A year later, a different title in the same catalogue. Godot 4.7, Spine-based,
 272 textures, and every one of them again at `compress/mode=0`. The default had
@@ -126,8 +126,22 @@ after       15,712,600       12,155,037
 16.3 MB, and `.godot/imported/` from 73 MB to 17 MB. Two projects, two years
 apart, same default, same size of mistake.
 
+Then a third, a smaller Spine-based game, and again every texture at
+`compress/mode=0`:
+
+```
+index.pck        raw           brotli -q5
+before      29,099,956       18,923,313
+after       13,264,968        9,926,947
+```
+
+**48% less on the wire.** A smaller share this time because there was less
+uncompressed art to begin with. The Spine atlases alone went from 26.1 MB of PNG
+to 9.9 MB of lossless WebP, checked pixel by pixel against the originals, with no
+scene touched.
+
 That is the part worth taking away: this is not a story about one badly set up
-project. It is the shipping default, and it costs the same every time.
+project. Three projects, and the shipping default was there every time.
 
 ## 7. Your export ships things you never chose
 
@@ -164,6 +178,13 @@ image`. I put them back to lossless, and they *still* produced no `.ctex`. They
 had been broken before this change, silently, and nothing in any scene or script
 referenced them. They were orphans that had been riding along in the repo.
 
+On the third project the single largest file in the pack was
+`extension_api.json`, **7.1 MB**. It is the dump of Godot's API that you compile a
+GDExtension against. It arrived together with a plugin, nothing reads it at
+runtime, and `all_resources` shipped it to every player anyway. If your project
+uses GDExtension, search your pack for it before anything else: it may be the
+biggest thing in there.
+
 You tend to find a few of these whenever you sort a project by file size. It's a
 good enough reason to do it once a year even when nothing is on fire.
 
@@ -193,6 +214,9 @@ breaking rules for Devanagari scripts degrade, and this is not something a
 screenshot diff catches: the build gets smaller and one of your locales quietly
 gets worse. Another title in the same catalogue runs without it in the same 12
 languages, which proves it boots, not that its Arabic renders correctly.
+
+The third project left it on for the same reason, until Arabic, Hindi and Nepali
+are checked on screen.
 
 **If you ship one locale, drop it and take the 4.8 MB.** If you ship Arabic,
 Hindi or Nepali, this is the one saving on the list you should walk away from
