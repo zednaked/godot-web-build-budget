@@ -293,11 +293,13 @@ came out of a build that shipped.
 
 ### If your build has the same problem
 
-I take this on as a fixed-scope audit: you send the exported build, I send back
-the measurements, what is actually costing you, and the ordered list of what to
-cut, largest saving first. No access to your source needed.
+I take this on as fixed-scope work, priced up front:
 
-**USD 400 · 3 business days · no repo access**
+| | what you get | time | price |
+|---|---|---|---|
+| **Audit** | you send the exported build; I send back a per-file inventory measured as transfer size, not disk size, and the ordered list of what to cut, each item with the megabytes it saves. No access to your source | 3 business days | **USD 1,200** |
+| **Audit + fixes** | the audit, then the fixes applied in your project: import modes, export filter, preset, and the rebuilt build measured again | 5 business days | **USD 2,400** |
+| **Catalogue or platform** | many titles, or a pipeline that builds other people's games: the rules above become a gate in CI | scoped together | **from USD 4,000** |
 
 **zednaked@gmail.com**
 
