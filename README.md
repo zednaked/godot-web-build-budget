@@ -1,7 +1,7 @@
 # Cutting a Godot web build from 119 MB to 37 MB
 
-*Third edition: three projects, the export settings nobody chooses, a 7 MB file
-nothing reads, and where the floor actually is.*
+*Fourth edition: six projects, one of them the control, the export settings
+nobody chooses, a 7 MB file nothing reads, and where the floor actually is.*
 
 A teammate couldn't open our game on his phone. The loading bar stopped at 90%
 and the screen went black. The same build booted fine on desktop, on all three
@@ -15,10 +15,17 @@ obvious guess.
 | first | `.godot/imported/` | 120 MB | 37 MB | 69% |
 | second | `index.pck`, raw | 60.7 MB | 15.7 MB | 74% |
 | third | `index.pck`, brotli (what the player downloads) | 18.9 MB | 9.9 MB | 48% |
+| fourth | `index.pck`, brotli | 38.7 MB | 14.0 MB | 64% |
+| fifth | `index.pck`, brotli | 42.4 MB | 10.3 MB | 76% |
+| sixth, the control | `index.pck`, brotli | 22.1 MB | 21.5 MB | 3% |
 
-Three projects measured three different ways, so there is no honest average. The
-honest summary is the floor: **every one came down by 48% or more**, with no
-assets deleted.
+Five projects shipped with the same import default, measured more than one way,
+so there is no honest average. The honest summary is the floor: **every one of
+the five came down by 48% or more**, with no assets deleted.
+
+The sixth is the control. Someone had already switched its import mode, and the
+same method found 3%. That gap is the best evidence I have that the default is
+the problem.
 
 ## 1. Open the pack before you optimise anything
 
@@ -120,7 +127,7 @@ tell you this. It's the one thing that has to be checked on screen.
 Same art, same scenes, no assets deleted. The phone that couldn't load the game
 loaded it.
 
-## 6. The same method on two more projects
+## 6. The same method on five more projects
 
 A year later, a different title in the same catalogue. Godot 4.7, Spine-based,
 272 textures, and every one of them again at `compress/mode=0`. The default had
@@ -150,12 +157,52 @@ uncompressed art to begin with. The Spine atlases alone went from 26.1 MB of PNG
 to 9.9 MB of lossless WebP, checked pixel by pixel against the originals, with no
 scene touched.
 
+Then two more in the same week, both Spine-based and both built on the same
+Godot 4.7.2 web preset, measured as `index.pck` in brotli:
+
+```
+                 textures at mode=0    before        after     cut
+fourth              144 of 144       38,716,124   13,994,830   64%
+fifth               239 of 239       42,417,511   10,282,457   76%
+```
+
+Nothing was deleted to get there. Every texture went from `compress/mode=0` to
+`compress/mode=1` with the `lossy_quality=0.7` that was already in the file, and
+the diff of the `.import` files outside that one key came out empty. The rest was
+the export filter from the next section.
+
+What I can't claim is that every texture came through clean. Nothing has been
+reverted so far, but the check was the screens the game actually showed, not a
+texture-by-texture review. The ones that need eyes are the usual suspects: hard
+edges, text painted into the art, logos. Anything that looks wrong goes back to
+lossless one `.import` at a time.
+
+### The one that didn't have the default
+
+The sixth project is what this looks like when someone already fixed it. 105 of
+its 123 textures were already lossy, including every Spine atlas page. The 18
+left at `mode=0` were small SVGs.
+
+```
+index.pck, brotli    before        after     cut
+sixth              22,128,229   21,519,296    3%
+```
+
+The export filter alone took 3%. Its biggest remaining item was a 4063 x 2268
+background at 4.0 MB, already lossy. Shrinking that is an art decision, not an
+export setting. That is where you stop.
+
 That is the part worth taking away: this is not a story about one badly set up
-project. Three projects, and the shipping default was there every time.
+project. Six projects, five of them with the shipping default, and the one
+without it had almost nothing to give.
+
+A note on the ruler: these local exports carry the `.ogg` files inside the
+`.pck`, before and after alike. The deploy strips them out (section 9), so the
+pack the player downloads is smaller than any number in this table.
 
 ## 7. Your export ships things you never chose
 
-The export preset in both projects was set to `all_resources`, which means
+From the second project on, the export preset was set to `all_resources`, which means
 everything under the project directory goes into the pack whether a scene
 references it or not. On the second project that was:
 
@@ -166,6 +213,10 @@ references it or not. On the second project that was:
 - `test_*.tscn` and `test_*.gd` — a test scene is not a game
 
 All of it went into `exclude_filter`, none of it was deleted from the repo.
+
+On the fourth project the same setting was shipping four full-screen layout
+mockups: 7.7 MB of `.ctex` in the pack as it shipped with the lossless default,
+for images no scene ever loaded.
 
 I have since watched someone else find the same shape independently. Ziwei Yu,
 measuring [Island Evolution](https://islandevolution.com), found 71 stray test
@@ -194,6 +245,14 @@ GDExtension against. It arrived together with a plugin, nothing reads it at
 runtime, and `all_resources` shipped it to every player anyway. If your project
 uses GDExtension, search your pack for it before anything else: it may be the
 biggest thing in there.
+
+On the last three projects I ran a reference scan: every file under the project
+that no scene, resource, `uid://` or path in code points to. It came back with
+115, 174 and 246 candidates, and each one was checked by hand before it went.
+Some of them are false positives on purpose: a sound loaded by name, a card
+texture whose path is built at runtime. I can't give you a size for the sweep on
+its own, because it landed together with other changes and I didn't export in
+between. A number I didn't measure doesn't go in here.
 
 You tend to find a few of these whenever you sort a project by file size. It's a
 good enough reason to do it once a year even when nothing is on fire.
@@ -225,8 +284,8 @@ screenshot diff catches: the build gets smaller and one of your locales quietly
 gets worse. Another title in the same catalogue runs without it in the same 12
 languages, which proves it boots, not that its Arabic renders correctly.
 
-The third project left it on for the same reason, until Arabic, Hindi and Nepali
-are checked on screen.
+The third through sixth projects left it on for the same reason, until Arabic,
+Hindi and Nepali are checked on screen.
 
 **If you ship one locale, drop it and take the 4.8 MB.** If you ship Arabic,
 Hindi or Nepali, this is the one saving on the list you should walk away from
@@ -286,10 +345,10 @@ the player looks at while those bytes arrive.
 
 ---
 
-Written from two production Godot 4.7 projects in a catalogue of commercial
+Written from six production Godot 4 projects in a catalogue of commercial
 titles shipped to the browser, where build size is a hard constraint rather than
 a preference. The numbers are measured, not estimated, and every one of them
-came out of a build that shipped.
+came out of a real export of a game that ships.
 
 ### If your build has the same problem
 
