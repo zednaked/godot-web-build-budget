@@ -128,9 +128,9 @@ tell you this. It's the one thing that has to be checked on screen.
 Same art, same scenes, no assets deleted. The phone that couldn't load the game
 loaded it.
 
-## 6. The same method on five more projects
+## 6. The same method on four more projects
 
-A year later, a different title in the same catalogue. Godot 4.7, Spine-based,
+A month later, a different title. Godot 4.7, Spine-based,
 272 textures, and every one of them again at `compress/mode=0`. The default had
 not changed and neither had the outcome.
 
@@ -141,7 +141,7 @@ after       15,712,600       12,155,037
 ```
 
 **74% less.** Switching the import mode alone took the pack from 60.7 MB to
-16.3 MB, and `.godot/imported/` from 73 MB to 17 MB. Two projects, two years
+16.3 MB, and `.godot/imported/` from 73 MB to 17 MB. Two projects, a month
 apart, same default, same size of mistake.
 
 Then a third, a smaller Spine-based game, and again every texture at
