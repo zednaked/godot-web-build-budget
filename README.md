@@ -1,8 +1,8 @@
 # Cutting a Godot web build from 119 MB to 37 MB
 
-*Fourth edition: five projects, the first one measured again a month later, the
-export settings nobody chooses, a 7 MB file nothing reads, and where the floor
-actually is.*
+*Fifth edition: sixteen projects, the first one measured again a month later,
+the export settings nobody chooses, a 7 MB file nothing reads, where the floor
+actually is, and why the cut ranges from 23% to 76%.*
 
 A teammate couldn't open our game on his phone. The loading bar stopped at 90%
 and the screen went black. The same build booted fine on desktop, on all three
@@ -18,11 +18,18 @@ obvious guess.
 | third | `index.pck`, brotli (what the player downloads) | 18.9 MB | 9.9 MB | 48% |
 | fourth | `index.pck`, brotli | 38.7 MB | 14.0 MB | 64% |
 | fifth | `index.pck`, brotli | 42.4 MB | 10.3 MB | 76% |
+| sixth to sixteenth | `index.pck`, brotli | 14.0 – 77.0 MB | 7.7 – 27.2 MB | 23 – 74% |
 | first, a month later | `index.pck`, brotli | 22.1 MB | 21.5 MB | 3% |
 
-Five projects, all shipped with the same import default, measured more than one
-way, so there is no honest average. The honest summary is the floor: **every one
-came down by 48% or more**, with no assets deleted.
+Sixteen projects, all shipped with the same import default. Fourteen of them
+were measured the same way, `index.pck` in brotli, and the cut runs from **23%
+to 76%**, with no assets deleted.
+
+The spread is not the method working some of the time. It is how much of each
+pack was lossless art to begin with: the big cuts are packs that were mostly
+textures, and the 23% is a small pack whose largest remaining item is fonts. So
+there is no honest average, and no floor worth promising either. Open the pack
+first (section 1) and it tells you which end of the range you are at.
 
 The last row is the first project again, a month after the fix, put through the
 same method: 3% left. The fix held, and the method knows when there is nothing
@@ -178,6 +185,30 @@ texture-by-texture review. The ones that need eyes are the usual suspects: hard
 edges, text painted into the art, logos. Anything that looks wrong goes back to
 lossless one `.import` at a time.
 
+Then eleven more over the next three days, same preset, same change, same ruler:
+
+```
+           textures at mode=0    before (brotli)   after      cut
+sixth            175 of 175        50,723,853   13,328,790    74%
+seventh          449 of 449        55,139,089   15,530,146    72%
+eighth                  all        50,690,427   15,793,337    69%
+ninth             89 of 91         27,853,116   11,348,797    59%
+tenth            323 of 323        25,448,766   11,772,478    54%
+eleventh          77 of 77         13,999,437    8,065,057    42%
+twelfth          118 of 118        17,656,445   13,594,644    23%
+thirteenth       149 of 149        24,044,678    7,743,202    68%
+fourteenth       628 of 628        76,972,159   27,233,303    65%
+fifteenth        361 of 361        35,156,406   14,171,699    60%
+sixteenth        291 of 291        38,472,904   12,555,644    67%
+```
+
+Every one of them had the default. What changed from row to row was how much
+of the pack it was sitting on. The eleventh and twelfth are the two smallest
+packs in the whole set: there was less lossless art to take out, and what is
+left in the twelfth is mostly fonts. That is why the range is the
+honest number and the old "48% or more" was not: the method doesn't promise a
+percentage, it tells you how much of your pack is the problem before you start.
+
 ### Back to the first one
 
 A month after the first fix I ran the same method on that first project again.
@@ -195,7 +226,7 @@ background at 4.0 MB, already lossy. Shrinking that is an art decision, not an
 export setting. That is where you stop.
 
 That is the part worth taking away: this is not a story about one badly set up
-project. Five projects, the shipping default in every one, and once it was fixed
+project. Sixteen projects, the shipping default in every one, and once it was fixed
 there was almost nothing left to give.
 
 A note on the ruler: these local exports carry the `.ogg` files inside the
@@ -347,7 +378,7 @@ the player looks at while those bytes arrive.
 
 ---
 
-Written from five production Godot 4 projects in a catalogue of commercial
+Written from sixteen production Godot 4 projects in a catalogue of commercial
 titles shipped to the browser, where build size is a hard constraint rather than
 a preference. The numbers are measured, not estimated, and every one of them
 came out of a real export of a game that ships.
