@@ -288,6 +288,11 @@ texture whose path is built at runtime. I can't give you a size for the sweep on
 its own, because it landed together with other changes and I didn't export in
 between. A number I didn't measure doesn't go in here.
 
+That scan is now a tool: [godot-unreachable](https://github.com/zednaked/godot-unreachable)
+follows references from what the engine actually loads, so two files that only
+cite each other come out dead together, and the false positives above (paths
+built at runtime) are kept and named.
+
 You tend to find a few of these whenever you sort a project by file size. It's a
 good enough reason to do it once a year even when nothing is on fire.
 
