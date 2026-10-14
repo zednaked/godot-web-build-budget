@@ -1,7 +1,8 @@
 # Cutting a Godot web build from 119 MB to 37 MB
 
-*Fifth edition: sixteen projects, the first one measured again a month later,
-the export settings nobody chooses, a 7 MB file nothing reads, where the floor
+*Sixth edition: why a build under its download budget can still crash a phone,
+sixteen projects, the first one measured again a month later, the export
+settings nobody chooses, a 7 MB file nothing reads, where the floor
 actually is, and why the cut ranges from 23% to 76%.*
 
 A teammate couldn't open our game on his phone. The loading bar stopped at 90%
@@ -362,6 +363,33 @@ Knowing where the floor is tells you when to stop, which is the part most size
 advice never gets to. Past that point the lever is no longer bytes, it is what
 the player looks at while those bytes arrive.
 
+## 11. The download is one budget. Memory is another.
+
+A build can download fine and still die on a phone. One title held **561 MB
+of live texture memory** in the running demo, against about 190 MB for a game of similar scope. On a real iPhone (iOS 16 and
+17) Safari reported `WebGL context lost` and killed the tab.
+
+None of it showed up in the `.pck`. A compressed PNG is small on the wire and
+full size on the GPU: **width × height × 4 bytes, whatever the file weighs.**
+
+**The frames were the size of the screen, and only a strip was drawn.** A
+90-frame header animation stored every frame as a full 720×1280 canvas. The
+sprite only drew a 480×280 region at the top. The arithmetic is the whole
+story: 720 × 1280 × 4 × 90 = 316 MiB, which is what was measured. Cropped to
+the region it actually draws, the same picture costs 46 MiB.
+
+**An `@export` keeps a resource alive whether you use it or not.** The English
+animation sheets were exported properties, so they loaded with the scene even
+when another language pack was in use: about 90 MB for nothing. Loading them by
+path, only when English is the active locale, removed it.
+
+Together: **561 → 217 MB.**
+
+**What to check, in order:** sprite frames larger than the region they draw;
+`@export` resources that only one locale or one mode needs. Multiply
+width × height × 4 for your largest textures before you trust the download
+size.
+
 ## The method, in five steps
 
 1. **Unpack and sort by size.** Never optimise from intuition; 91% of our budget
@@ -389,7 +417,7 @@ I take this on as fixed-scope work, priced up front:
 
 | | what you get | time | price |
 |---|---|---|---|
-| **Audit** | you send the exported build; I send back a per-file inventory measured as transfer size, not disk size, and the ordered list of what to cut, each item with the megabytes it saves. No access to your source | 3 business days | **USD 1,200** |
+| **Audit** | you send the exported build; I send back a per-file inventory measured as transfer size, not disk size, the textures that will not fit in a phone's memory, and the ordered list of what to cut, each item with the megabytes it saves. No access to your source | 3 business days | **USD 1,200** |
 | **Audit + fixes** | the audit, then the fixes applied in your project: import modes, export filter, preset, and the rebuilt build measured again | 5 business days | **USD 2,400** |
 | **Catalogue or platform** | many titles, or a pipeline that builds other people's games: the rules above become a gate in CI | scoped together | **from USD 4,000** |
 
